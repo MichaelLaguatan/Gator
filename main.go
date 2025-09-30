@@ -38,11 +38,6 @@ func (c *commands) run(s *state, cmd command) error {
 	return fmt.Errorf("command not found")
 }
 
-func (c *commands) register(name string, f func(*state, command) error) error {
-	c.cmds[name] = f
-	return nil
-}
-
 func main() {
 	cfg, err := config.Read()
 	if err != nil {
@@ -56,15 +51,17 @@ func main() {
 	}
 	dbQueries := database.New(db)
 	appState := state{dbQueries, &cfg}
-	appCommands := commands{map[string]func(*state, command) error{}}
-	appCommands.register("login", handlerLogin)
-	appCommands.register("register", handlerRegister)
-	appCommands.register("reset", handlerReset)
+	appCommands := commands{map[string]func(*state, command) error{
+		"login":    handlerLogin,
+		"register": handlerRegister,
+		"reset":    handlerReset,
+		"users":    handlerUsers,
+	}}
 	args := os.Args
 	cmd := command{args[1], args[2:]}
 	err = appCommands.run(&appState, cmd)
 	if err != nil {
-		fmt.Printf("error running command: %v\n", err)
+		fmt.Printf("error running %v command: %v\n", cmd.name, err)
 		os.Exit(1)
 	}
 	cfg, err = config.Read()
@@ -116,5 +113,26 @@ func handlerReset(s *state, cmd command) error {
 	if err := s.db.Reset(context.Background()); err != nil {
 		return fmt.Errorf("error reseting db: %w", err)
 	}
+	return nil
+}
+
+func handlerUsers(s *state, cmd command) error {
+	users, err := s.db.GetUsers(context.Background())
+	if err != nil {
+		return fmt.Errorf("error getting usernames from db: %w", err)
+	}
+	current_user, err := s.db.GetUser(context.Background(), s.config.CurrentUserName)
+	if err != nil {
+		return fmt.Errorf("user defined in config does not exist in db: %w", err)
+	}
+	fmt.Printf("Current Users:\n")
+	for _, user := range users {
+		if current_user.Name == user {
+			fmt.Printf("* %v (current)", user)
+		} else {
+			fmt.Printf("* %v", user)
+		}
+	}
+	fmt.Print("\n")
 	return nil
 }
