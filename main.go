@@ -71,6 +71,7 @@ func setup() (*state, *commands, error) {
 		"addfeed":   middlewareLoggedIn(handlerAddFeed),
 		"feeds":     handlerFeeds,
 		"follow":    middlewareLoggedIn(handlerFollow),
+		"unfollow":  middlewareLoggedIn(handlerUnfollow),
 		"following": middlewareLoggedIn(handlerFollowing),
 	}}
 	return &appState, &appCommands, nil
