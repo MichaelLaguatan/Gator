@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"os"
@@ -67,10 +68,24 @@ func setup() (*state, *commands, error) {
 		"reset":     handlerReset,
 		"users":     handlerUsers,
 		"agg":       handlerAgg,
-		"addfeed":   handlerAddFeed,
+		"addfeed":   middlewareLoggedIn(handlerAddFeed),
 		"feeds":     handlerFeeds,
-		"follow":    handlerFollow,
-		"following": handlerFollowing,
+		"follow":    middlewareLoggedIn(handlerFollow),
+		"following": middlewareLoggedIn(handlerFollowing),
 	}}
 	return &appState, &appCommands, nil
+}
+
+func middlewareLoggedIn(handler func(s *state, cmd command, user database.User) error) func(*state, command) error {
+	return func(s *state, c command) error {
+		user, err := s.db.GetUser(context.Background(), s.config.CurrentUserName)
+		if err != nil {
+			return fmt.Errorf("error: user specified in config is not registered in the db: %w", err)
+		}
+		err = handler(s, c, user)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
 }
