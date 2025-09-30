@@ -16,7 +16,7 @@ type Config struct {
 }
 
 func Read() (Config, error) {
-	current_directory, _ := os.Getwd()
+	current_directory, _ := os.UserHomeDir() // replace with os.Getwd() to use .gatorconfig.json in Gator directory
 	filepath := current_directory + configFileName
 	configFile, err := os.Open(filepath)
 	if err != nil {
@@ -41,7 +41,7 @@ func (c *Config) SetUser(username string) error {
 }
 
 func write(config Config) error {
-	current_directory, _ := os.Getwd()
+	current_directory, _ := os.UserHomeDir() // replace with os.Getwd() to use .gatorconfig.json in Gator directory
 	filepath := current_directory + configFileName
 	configFile, err := os.Create(filepath)
 	if err != nil {
