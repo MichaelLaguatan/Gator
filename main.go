@@ -62,14 +62,15 @@ func setup() (*state, *commands, error) {
 	dbQueries := database.New(db)
 	appState := state{dbQueries, &cfg}
 	appCommands := commands{map[string]func(*state, command) error{
-		"login":    handlerLogin,
-		"register": handlerRegister,
-		"reset":    handlerReset,
-		"users":    handlerUsers,
-		"agg":      handlerAgg,
-		"addfeed":  handlerAddFeed,
-		"feeds":    handlerFeeds,
-		"follow":   handlerFollow,
+		"login":     handlerLogin,
+		"register":  handlerRegister,
+		"reset":     handlerReset,
+		"users":     handlerUsers,
+		"agg":       handlerAgg,
+		"addfeed":   handlerAddFeed,
+		"feeds":     handlerFeeds,
+		"follow":    handlerFollow,
+		"following": handlerFollowing,
 	}}
 	return &appState, &appCommands, nil
 }

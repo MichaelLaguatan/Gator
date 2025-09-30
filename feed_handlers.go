@@ -23,20 +23,31 @@ func handlerAddFeed(s *state, cmd command) error {
 	if len(cmd.args) != 2 {
 		return fmt.Errorf("wrong amount of arguments supplied")
 	}
+	current_time := time.Now()
 	currentUser, err := s.db.GetUser(context.Background(), s.config.CurrentUserName)
 	if err != nil {
 		return fmt.Errorf("user defined in config does not exist in db: %w", err)
 	}
 	feed, err := s.db.CreateFeed(context.Background(), database.CreateFeedParams{
 		ID:        uuid.New(),
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		CreatedAt: current_time,
+		UpdatedAt: current_time,
 		Name:      cmd.args[0],
 		Url:       cmd.args[1],
 		UserID:    currentUser.ID,
 	})
 	if err != nil {
 		return fmt.Errorf("error adding feed to db: %w", err)
+	}
+	_, err = s.db.CreateFeedFollow(context.Background(), database.CreateFeedFollowParams{
+		ID:        uuid.New(),
+		CreatedAt: current_time,
+		UpdatedAt: current_time,
+		UserID:    currentUser.ID,
+		FeedID:    feed.ID,
+	})
+	if err != nil {
+		return fmt.Errorf("error making current user follow added feed: %w", err)
 	}
 	fmt.Printf("%v", feed)
 	return nil
@@ -51,31 +62,6 @@ func handlerFeeds(s *state, cmd command) error {
 	for _, feed := range feeds {
 		fmt.Printf("Name: %v\nCreated By: %v\nURL: %v\n\n", feed.Name_2, feed.Name, feed.Url)
 	}
-	return nil
-}
-
-func handlerFollow(s *state, cmd command) error {
-	if len(cmd.args) != 1 {
-		return fmt.Errorf("wrong amount of arguments supplied")
-	}
-	currentUser, err := s.db.GetUser(context.Background(), s.config.CurrentUserName)
-	if err != nil {
-		return fmt.Errorf("user defined in config does not exist in db: %w", err)
-	}
-	feed, err := s.db.GetFeed(context.Background(), cmd.args[0])
-	if err != nil {
-		return fmt.Errorf("provided feed URL does not exist in db: %w", err)
-	}
-	feedFollow, err := s.db.CreateFeedFollow(context.Background(), database.CreateFeedFollowParams{
-		ID:        uuid.New(),
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-		UserID:    currentUser.ID,
-		FeedID:    feed.ID,
-	})
-	if err != nil {
-		return fmt.Errorf("error creating feed_follow row: %w", err)
-	}
-	fmt.Printf("Feed name: %v\nCurrent User: %v", feedFollow.FeedName, feedFollow.UserName)
+	fmt.Print("\n")
 	return nil
 }

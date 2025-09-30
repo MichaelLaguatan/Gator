@@ -33,10 +33,11 @@ func handlerRegister(s *state, cmd command) error {
 		fmt.Printf("user with username %v already exists\n", cmd.args[0])
 		os.Exit(1)
 	}
+	current_time := time.Now()
 	user, err := s.db.CreateUser(context.Background(), database.CreateUserParams{
 		ID:        uuid.New(),
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		CreatedAt: current_time,
+		UpdatedAt: current_time,
 		Name:      cmd.args[0],
 	})
 	if err != nil {
