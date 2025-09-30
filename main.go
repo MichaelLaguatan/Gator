@@ -9,6 +9,7 @@ import (
 
 	"github.com/MichaelLaguatan/Gator/internal/config"
 	"github.com/MichaelLaguatan/Gator/internal/database"
+	"github.com/MichaelLaguatan/Gator/internal/rss"
 	"github.com/google/uuid"
 	_ "github.com/lib/pq"
 )
@@ -56,6 +57,9 @@ func main() {
 		"register": handlerRegister,
 		"reset":    handlerReset,
 		"users":    handlerUsers,
+		"agg":      handlerAgg,
+		"addfeed":  handlerAddFeed,
+		"feeds":    handlerFeeds,
 	}}
 	args := os.Args
 	cmd := command{args[1], args[2:]}
@@ -121,18 +125,62 @@ func handlerUsers(s *state, cmd command) error {
 	if err != nil {
 		return fmt.Errorf("error getting usernames from db: %w", err)
 	}
-	current_user, err := s.db.GetUser(context.Background(), s.config.CurrentUserName)
+	currentUser, err := s.db.GetUser(context.Background(), s.config.CurrentUserName)
 	if err != nil {
 		return fmt.Errorf("user defined in config does not exist in db: %w", err)
 	}
 	fmt.Printf("Current Users:\n")
 	for _, user := range users {
-		if current_user.Name == user {
+		if currentUser.Name == user {
 			fmt.Printf("* %v (current)", user)
 		} else {
 			fmt.Printf("* %v", user)
 		}
 	}
 	fmt.Print("\n")
+	return nil
+}
+
+func handlerAgg(s *state, cmd command) error {
+	feed, err := rss.FetchFeed(context.Background(), "https://www.wagslane.dev/index.xml")
+	if err != nil {
+		return fmt.Errorf("error fetching feed: %w", err)
+	}
+	fmt.Printf("%v\n", feed)
+	return nil
+}
+
+func handlerAddFeed(s *state, cmd command) error {
+	if len(cmd.args) != 2 {
+		return fmt.Errorf("wrong amount of arguments supplied")
+	}
+	currentUser, err := s.db.GetUser(context.Background(), s.config.CurrentUserName)
+	if err != nil {
+		return fmt.Errorf("user defined in config does not exist in db: %w", err)
+	}
+	feed, err := s.db.CreateFeed(context.Background(), database.CreateFeedParams{
+		ID:        uuid.New(),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		Name:      cmd.args[0],
+		Url:       cmd.args[1],
+		UserID:    currentUser.ID,
+	})
+	if err != nil {
+		return fmt.Errorf("error adding feed to db: %w", err)
+	}
+	fmt.Printf("%v", feed)
+	return nil
+}
+
+func handlerFeeds(s *state, cmd command) error {
+	feeds, err := s.db.GetFeeds(context.Background())
+	if err != nil {
+		return fmt.Errorf("error getting feeds info: %w", err)
+	}
+	fmt.Printf("Current Feeds:\n")
+	for _, feed := range feeds {
+		fmt.Printf("Name: %v\nCreated By: %v\nURL: %v\n\n", feed.Name_2, feed.Name, feed.Url)
+	}
 	return nil
 }
