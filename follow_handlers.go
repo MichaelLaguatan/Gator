@@ -17,11 +17,11 @@ func handlerFollow(s *state, cmd command, user database.User) error {
 	if err != nil {
 		return fmt.Errorf("provided feed URL does not exist in db: %w", err)
 	}
-	current_time := time.Now()
+	currentTime := time.Now()
 	feedFollow, err := s.db.CreateFeedFollow(context.Background(), database.CreateFeedFollowParams{
 		ID:        uuid.New(),
-		CreatedAt: current_time,
-		UpdatedAt: current_time,
+		CreatedAt: currentTime,
+		UpdatedAt: currentTime,
 		UserID:    user.ID,
 		FeedID:    feed.ID,
 	})
