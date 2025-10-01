@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/MichaelLaguatan/Gator/internal/database"
@@ -48,9 +49,32 @@ func scrapeFeeds(s *state) error {
 	}
 	fmt.Printf("Fetched feed: %v", fetchedFeed.Channel.Title)
 	for _, item := range fetchedFeed.Channel.Item {
-		fmt.Printf("Item Title: %v\n", item.Title)
+		publishedAt := sql.NullTime{}
+		if t, err := time.Parse(time.RFC1123Z, item.PubDate); err == nil {
+			publishedAt = sql.NullTime{
+				Time:  t,
+				Valid: true,
+			}
+		}
+		currentTime := time.Now()
+		_, err = s.db.CreatePost(context.Background(), database.CreatePostParams{
+			ID:          uuid.New(),
+			CreatedAt:   currentTime,
+			UpdatedAt:   currentTime,
+			Title:       item.Title,
+			Description: sql.NullString{String: item.Description, Valid: true},
+			Url:         item.Link,
+			PublishedAt: publishedAt,
+			FeedID:      nextFeed.ID,
+		})
+		if err != nil {
+			if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
+				continue
+			}
+			fmt.Printf("Couldn't create post: %v", err)
+			continue
+		}
 	}
-	fmt.Print("\n")
 	return nil
 }
 

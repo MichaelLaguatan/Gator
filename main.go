@@ -73,6 +73,7 @@ func setup() (*state, *commands, error) {
 		"follow":    middlewareLoggedIn(handlerFollow),
 		"unfollow":  middlewareLoggedIn(handlerUnfollow),
 		"following": middlewareLoggedIn(handlerFollowing),
+		"browse":    middlewareLoggedIn(handlerBrowse),
 	}}
 	return &appState, &appCommands, nil
 }
