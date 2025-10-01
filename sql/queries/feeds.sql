@@ -9,3 +9,25 @@ VALUES (
     $6
 )
 RETURNING *;
+
+-- name: GetFeed :one
+SELECT * 
+FROM feeds
+WHERE url = $1;
+
+-- name: GetFeeds :many
+SELECT users.name, feeds.name, feeds.url
+FROM users
+INNER JOIN feeds
+ON users.id = feeds.user_id;
+
+-- name: GetNextFeedToFetch :one
+SELECT *
+FROM feeds
+ORDER BY last_fetched NULLS FIRST
+LIMIT 1;
+
+-- name: MarkFeedFetched :exec
+UPDATE feeds
+SET last_fetched = $2, updated_at = $3
+WHERE feeds.id = $1;
